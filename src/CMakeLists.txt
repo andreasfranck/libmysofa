@@ -75,14 +75,28 @@ set(libsrc
     hrtf/easy.c
     hrtf/cache.c
     resampler/speex_resampler.c)
+
+set(public-headers
+    hrtf/mysofa.h)
+
 if(BUILD_STATIC_LIBS)
 add_library(mysofa-static STATIC ${libsrc})
+target_include_directories(mysofa-static
+  PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/hrtf>
+  $<INSTALL_INTERFACE:include/>
+)
 target_link_libraries(mysofa-static LINK_PRIVATE ${MATH} ${ZLIB_LIBRARIES})
 set_target_properties(
   mysofa-static
   PROPERTIES OUTPUT_NAME mysofa CLEAN_DIRECT_OUTPUT 1 POSITION_INDEPENDENT_CODE
                                                       ON)
-install(TARGETS mysofa-static ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+set_target_properties( mysofa-static PROPERTIES PUBLIC_HEADER ${public-headers})
+install(TARGETS mysofa-static
+  EXPORT mysofa_exports
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  )
 
   if(UNIX
      AND CODE_COVERAGE
@@ -99,6 +113,12 @@ endif()
 
 if(BUILD_SHARED_LIBS)
   add_library(mysofa-shared SHARED ${libsrc})
+  target_include_directories(mysofa-shared
+    PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/hrtf>
+    $<INSTALL_INTERFACE:include/>
+  )
+  target_link_libraries(mysofa-static LINK_PRIVATE ${MATH} ${ZLIB_LIBRARIES})
   target_link_libraries(mysofa-shared PRIVATE ${MATH} ${ZLIB_LIBRARIES})
   set_target_properties(mysofa-shared
                         PROPERTIES OUTPUT_NAME mysofa CLEAN_DIRECT_OUTPUT 1)
@@ -129,13 +149,15 @@ if(BUILD_SHARED_LIBS)
   install(
     TARGETS mysofa-shared
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    # TODO: What about the import lib ".lib" on Windows?
+    # This is set through ARCHIVE DESTINATION
+    # Be wary of name clashes with mysofa-static.
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} )
 else()
   generate_export_header(mysofa-static BASE_NAME mysofa EXPORT_FILE_NAME
                          ${PROJECT_SOURCE_DIR}/src/hrtf/mysofa_export.h)
 endif()
-
-install(FILES hrtf/mysofa.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 if(BUILD_TESTS)
   add_executable(mysofa2json tests/sofa2json.c tests/json.c)

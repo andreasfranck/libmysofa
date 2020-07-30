@@ -103,3 +103,51 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/libmysofa.pc.cmake"
                "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc" @ONLY)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.pc"
         DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
+
+# At the moment this works only on Linux.
+set( MYSOFA_INSTALL_EXPORT_CONFIG_DIRECTORY lib/cmake/ )
+
+# Install exported targets as config files
+# for use from install tree
+install(EXPORT mysofa_exports
+  NAMESPACE mysofa::
+  FILE mysofa_exports.cmake
+  DESTINATION ${MYSOFA_INSTALL_EXPORT_CONFIG_DIRECTORY}
+  )
+
+# Create config files for exported targets
+# for use from build tree
+export(EXPORT mysofa_exports
+  NAMESPACE mysofa::
+  FILE mysofa_exports.cmake
+  )
+
+# Install package config file
+# for use from install tree
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/mysofa-config.cmake
+  DESTINATION ${MYSOFA_INSTALL_EXPORT_CONFIG_DIRECTORY} )
+
+# Install package config file
+# for use from install tree
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/mysofa-config.cmake
+  DESTINATION ${MYSOFA_INSTALL_EXPORT_CONFIG_DIRECTORY} )
+
+# Copy package config file
+configure_file(mysofa-config.cmake.in
+mysofa-config.cmake @ONLY)
+
+include(CMakePackageConfigHelpers)
+
+# Create package version file
+# Assuming major version bump = breaking API changes
+write_basic_package_version_file(mysofa-config-version.cmake
+  VERSION
+  ${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}
+  COMPATIBILITY SameMajorVersion)
+
+# Install package version file
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/mysofa-config-version.cmake
+  DESTINATION ${MYSOFA_INSTALL_EXPORT_CONFIG_DIRECTORY} )
+
+# Register package in user registry
+export(PACKAGE mysofa)
